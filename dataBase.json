@@ -1,0 +1,6 @@
+{
+  "driver": "mysql",
+  "user": "root",
+  "database": "mastery",
+  "password": "1221"
+}
