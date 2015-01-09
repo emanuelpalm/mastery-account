@@ -17,9 +17,13 @@ var sequelize = new Sequelize(config.database, config.user,
       timestamps: false
     }
   });
+var emsg = {
+  "id": null,
+  "avatar-url": null
+};
 
 var Player = sequelize.define('players', {
-  facebookId: Sequelize.INTEGER,
+  facebookId: Sequelize.TEXT,
   avatarUrl: Sequelize.TEXT,
 }, {
   instanceMethods: {
@@ -86,19 +90,38 @@ var Player = sequelize.define('players', {
 });
 
 function handleFacebook(token, onSuccess, onError) {
+  //  console.log(new Error()
+  //    .stack);
   FB.setAccessToken(token);
   FB.api('me/', function(res) {
     if (!res || res.error) {
-      oneError(res.error);
+      onError(res.error);
       console.log(!res ? 'error occurred' : res.error);
       return;
     }
-    onsuccess(res.id);
+    onSuccess(res.id);
   });
 }
 
 router.post('/avatars', jsonparser, function(req, res) {
-  var token = req.body.token;
+  //  var token = req.body.token;
+  var authorization = req.get('Authorization');
+  console.log(authorization);
+
+  if (typeof authorization !== 'string') {
+    authorization = "";
+    console.log('------------------');
+  }
+  var shards = authorization.split(' ');
+  //  console.log(shards);
+  if (shards.length != 2) {
+    res.status(400)
+      .json({
+        message: "Access token required"
+      });
+    return;
+  }
+  var token = shards[1];
   handleFacebook(token, function(facebook) {
     var player = Player.build();
     player.retrieveByFacebookId(facebook, function(players) {
@@ -113,12 +136,13 @@ router.post('/avatars', jsonparser, function(req, res) {
           avatarUrl: filename
         });
         player.updateByFacebookId(facebook, function() {
-          res.status(200)
-            .json({
-              location: player.avatarUrl
-            });
+          res.set('location', '/avatars/' + player.avatarUrl);
+          res.status(204)
+            .end();
+
         }, function(error) {
-          res.json(error);
+          res.status(500)
+            .json(error);
         });
       } else {
         res.status(401)
@@ -127,41 +151,61 @@ router.post('/avatars', jsonparser, function(req, res) {
           });
       }
     }, function(error) {
-      res.json(error);
+      res.status(500)
+        .json(error);
     });
+  }, function(error) {
+    res.status(500)
+      .json(error);
   });
 
 }, function(error) {
   res.json(err);
 });
 
+router.get('/favicon.ico', function(req, res) {
+  res.status(404)
+    .end();
+});
+
 router.get('/:token', jsonparser, function(req, res) {
   var player = Player.build();
-  console.log(req.query.token);
+  console.log(req.params);
   var token = req.query.token;
 
   handleFacebook(token, function(facebook) {
     player.retrieveByFacebookId(facebook, function(players) {
       if (players) {
-        res.json(players);
+        emsg.id = players.id;
+        emsg["avatar-url"] = players.avatarUrl;
+        res.json(emsg);
       } else {
         var player = Player.build({
           facebookId: facebook,
           avatarUrl: null
         });
         player.add(function(success) {
-          res.json(success);
-        }, function(err) {
-          res.json(err);
+          emsg.id = success.id;
+          emsg["avatar-url"] = success.avatarUrl;
+          console.log(emsg);
+          res.json(emsg);
+        }, function(error) {
+          res.status(500)
+            .json(error);
         });
       }
     }, function(error) {
-      res.json(error);
+      res.status(500)
+        .json(error);
     });
+  }, function(error) {
+    res.status(500)
+      .json(error);
   });
 
 }, function(error) {
-  res.json(err);
+  res.status(500)
+    .json(error);
 });
 
 //working
@@ -169,15 +213,18 @@ router.get('/players/:playerId', jsonparser, function(req, res) {
   var player = Player.build();
   player.retrieveById(req.params.playerId, function(players) {
     if (players) {
-      res.json(players);
+      emsg.id = players.id;
+      emsg["avatar-url"] = players.avatarUrl;
+      res.json(emsg);
     } else {
-      res.status(401)
+      res.status(500)
         .json({
           message: "Player not found"
         });
     }
   }, function(error) {
-    res.json(error);
+    res.status(500)
+      .json(error);
   });
 });
 //working
@@ -185,16 +232,25 @@ router.get('/avatars/:name', jsonparser, function(req, res) {
   var player = Player.build();
   player.retrieveByAvatarName(req.params.name, function(players) {
     if (players) {
-      var base64data = null;
-      fs.readFile('./avatars/' + req.params.name, function(error, data) {
-        if (error) {
-          res.json(error);
-        } else {
-          base64data = new Buffer(data)
-            .toString('base64');
-          res.json(base64data);
-        }
+      res.sendFile(req.params.name, {
+        root: __dirname + '/avatars/',
+        dotfiles: 'deny'
+      }, function(error) {
+        res.status(500)
+          .end();
       });
+      /*  var base64data = null;
+        fs.readFile('./avatars/' + req.params.name, function(error, data) {
+          if (error) {
+            res.json(error);
+          } else {
+            base64data = new Buffer(data)
+              .toString('base64');
+            res.sendFile('./avatars/' + req.params.name);
+
+          }
+        });
+        */
     } else {
       res.status(401)
         .json({
@@ -202,6 +258,7 @@ router.get('/avatars/:name', jsonparser, function(req, res) {
         });
     }
   }, function(error) {
+    console.log(error);
     res.json(error);
   });
 });
