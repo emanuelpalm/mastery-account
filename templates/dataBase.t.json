@@ -1,0 +1,7 @@
+{
+  "driver": "mysql",
+  "user": "{{db.user}}",
+  "database": "mastery",
+  "password": "{{db.password}}"
+}
+
