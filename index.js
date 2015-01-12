@@ -9,6 +9,7 @@ var router = express.Router();
 var Sequelize = require('sequelize');
 var FB = require('fb');
 
+var avatarRoot = (process.argv.length == 3) ? process.argv[2] : __dirname + '/avatars/';
 var sequelize = new Sequelize(config.database, config.user,
   config.password, {
     dialect: config.driver,
@@ -128,7 +129,8 @@ router.post('/avatars', jsonparser, function(req, res) {
       if (players) {
         var filename = crypto.randomBytes(24)
           .toString("hex") + ".png";
-        fs.writeFile('./avatars/' + filename, req.body.data, "base64", function(err) {
+        console.log(avatarRoot + filename);
+        fs.writeFile(avatarRoot + filename, req.body.data, "base64", function(err) {
           console.log(filename);
         });
         player = Player.build({
@@ -168,9 +170,9 @@ router.get('/favicon.ico', function(req, res) {
     .end();
 });
 
-router.get('/:token', jsonparser, function(req, res) {
+router.get('/me', jsonparser, function(req, res) {
   var player = Player.build();
-  console.log(req.params);
+  console.log(req.query);
   var token = req.query.token;
 
   handleFacebook(token, function(facebook) {
@@ -233,7 +235,7 @@ router.get('/avatars/:name', jsonparser, function(req, res) {
   player.retrieveByAvatarName(req.params.name, function(players) {
     if (players) {
       res.sendFile(req.params.name, {
-        root: __dirname + '/avatars/',
+        root: avatarRoot,
         dotfiles: 'deny'
       }, function(error) {
         res.status(500)
