@@ -11,6 +11,7 @@ DB_SETUP_IN  = templates/setup.t.sql
 DB_SETUP_OUT = $(PATH_BASE)setup.sql
 
 # Database user/password.
+DB_HOST      = localhost
 DB_USER      = master
 ifeq (,$(shell which $(OPENSSL)))
 DB_PASSWORD := $(shell openssl rand -base64 33)
@@ -74,9 +75,10 @@ $(DB_SETUP_OUT): $(DB_SETUP_IN) $(PATH_BASE)
 	$(RM) $@.tmp0
 
 $(DB_CONF_OUT): $(DB_CONF_IN) $(PATH_BASE)
-	$(SED) 's/{{db.user}}/$(DB_USER)/' < $< > $@.tmp1
-	$(SED) 's/{{db.password}}/$(subst /,0,$(DB_PASSWORD))/' < $@.tmp1 > $@
-	$(RM) $@.tmp1
+	$(SED) 's/{{db.user}}/$(DB_USER)/' < $< > $@.tmp10
+	$(SED) 's/{{db.password}}/$(subst /,0,$(DB_PASSWORD))/' < $@.tmp10 > $@.tmp11
+	$(SED) 's/{{db.host}}/$(DB_HOST)/' < $@.tmp11 > $@
+	$(RM) $@.tmp1*
 
 $(PATH_BASE)$(NPM_PACKAGE): $(NPM_PACKAGE) $(PATH_BASE)
 	$(CP) $< $@

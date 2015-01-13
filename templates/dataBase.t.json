@@ -2,6 +2,7 @@
   "driver": "mysql",
   "user": "{{db.user}}",
   "database": "mastery",
-  "password": "{{db.password}}"
+  "password": "{{db.password}}",
+  "host": "{{db.host}}"
 }
 

@@ -10,8 +10,8 @@ var Sequelize = require('sequelize');
 var FB = require('fb');
 
 var avatarRoot = (process.argv.length == 3) ? process.argv[2] : __dirname + '/avatars/';
-var sequelize = new Sequelize(config.database, config.user,
-  config.password, {
+var sequelize = new Sequelize(config.database, config.user, config.password, {
+    host: config.host,
     dialect: config.driver,
     logging: console.log,
     define: {

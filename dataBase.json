@@ -2,5 +2,6 @@
   "driver": "mysql",
   "user": "root",
   "database": "mastery",
-  "password": "1221"
+  "password": "1221",
+  "host": "localhost"
 }
