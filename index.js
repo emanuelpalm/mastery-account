@@ -135,10 +135,10 @@ router.post('/avatars', jsonparser, function(req, res) {
         });
         player = Player.build({
           facebookId: facebook,
-          avatarUrl: filename
+          avatarUrl: '/avatars/' + filename
         });
         player.updateByFacebookId(facebook, function() {
-          res.set('location', '/avatars/' + player.avatarUrl);
+          res.set('location', player.avatarUrl);
           res.status(204)
             .end();
 
